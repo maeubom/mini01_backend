@@ -1,6 +1,6 @@
 import tempfile
 from transformers import pipeline
-from fastapi import FastAPI, File, UploadFile, APIRouter
+from fastapi import FastAPI, File, UploadFile, APIRouter, HTTPException
 import torch
 import cv2
 from PIL import Image
@@ -16,6 +16,10 @@ video_cls = pipeline("image-classification", model="motheecreator/vit-Facial-Exp
 
 @router.post("/video/")
 async def create_upload_file(file: UploadFile = File(...)):
+    # 파일 형식 체크
+    if not (file.content_type == 'video/mp4' or file.content_type == 'video/webm'):
+        raise HTTPException(status_code=400, detail="사용불가능한 확장자입니다. 'mp4'와 'webm' 형식만 가능합니다.")
+    
     # 파일 불러오기
     video_stream = await file.read()
     
@@ -28,7 +32,6 @@ async def create_upload_file(file: UploadFile = File(...)):
     cap = cv2.VideoCapture(tmp_file_path)
     
     emotions = []
-
     frame_count = 0
     
     while cap.isOpened():
@@ -36,7 +39,7 @@ async def create_upload_file(file: UploadFile = File(...)):
         if not ret:
             break
         
-        # 매 30프레임마다 처리(30프레임 정도가 속도가 빠르긴 합니다.)
+        # 매 30프레임마다 처리
         if frame_count % 30 == 0:
             # 프레임을 BGR에서 RGB로 변환
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -54,7 +57,6 @@ async def create_upload_file(file: UploadFile = File(...)):
         frame_count += 1
 
     cap.release()
-
     os.remove(tmp_file_path)
     
     # 가장 자주 나오는 감정 찾기
