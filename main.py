@@ -5,6 +5,7 @@ import uvicorn
 from router.photo_senti import router as photo_router
 from router.text_to_image import router as text_to_image_router
 from router.text_senti import router as text_senti_router
+from router.audio_to_text import router as transcribe_router
 
 
 app = FastAPI()
@@ -13,6 +14,7 @@ app = FastAPI()
 app.include_router(photo_router)
 app.include_router(text_to_image_router)
 app.include_router(text_senti_router)
+app.include_router(transcribe_router)
 
 @app.get("/")
 def index():

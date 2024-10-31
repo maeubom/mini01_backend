@@ -1,15 +1,15 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import APIRouter, File, UploadFile
 from transformers import WhisperForConditionalGeneration, WhisperProcessor
 import librosa
 import io
 
-app = FastAPI()
+router = APIRouter()
 
 # 모델 및 프로세서 로드
 model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-large-v3-turbo")
 processor = WhisperProcessor.from_pretrained("openai/whisper-large-v3-turbo")
 
-@app.post("/transcribe")
+@router.post("/transcribe")
 async def transcribe(audio: UploadFile = File(...)):
     # 업로드된 오디오 파일을 읽음
     audio_bytes = await audio.read()
@@ -26,6 +26,3 @@ async def transcribe(audio: UploadFile = File(...)):
 
     return {"text": transcription}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
