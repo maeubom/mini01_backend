@@ -30,13 +30,13 @@ from fastapi import APIRouter, Form
 router = APIRouter()
 
 
-@router.post("/senti-2")
+@router.post("/v1/api/text-to-sentiment")
 def senti2(query: str = Form(...)):
     result = get_bi_sentiment(query)
     return result
 
 
-@router.post("/senti-k")
-def sentik(query: str = Form(...), top_k: int = Form(...)):
-    result = get_top_k_sentiment(query, top_k)
-    return result
+# @router.post("/senti-k")
+# def sentik(query: str = Form(...), top_k: int = Form(...)):
+#     result = get_top_k_sentiment(query, top_k)
+#     return result
