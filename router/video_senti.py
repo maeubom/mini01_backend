@@ -29,9 +29,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 router = APIRouter()
 
 # 사진으로 감정분석하는 모델입니다.
-video_cls = pipeline("image-classification", model="motheecreator/vit-Facial-Expression-Recognition", device=device.index if device.type == 'cuda' else -1)
+video_cls = pipeline("image-classification", model="motheecreator/vit-Facial-Expression-Recognition", device=0)
 
-@router.post("/video/")
+@router.post("/v1/api/video-to-senti")
 async def create_upload_file(file: UploadFile = File(...)):
     # 파일 형식 체크
     if not (file.content_type == 'video/mp4' or file.content_type == 'video/webm'):

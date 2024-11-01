@@ -10,3 +10,13 @@
 영어로 감정 쿼리를 넣으면 귀여운 고양이(.png)가 나옵니다.
 
 서버 IP는 임시 IP이니 주의 바랍니다.
+
+</br></br>
+
+## 필요 라이브러리 명령어 </br>
+```pip install "fastapi[standard]" ```</br>
+```pip install librosa scipy websocket-client fastapi uvicorn torch transformers opencv-python Pillow numpy ``` </br>
+이 명령어면 모든 모델의 필수 라이브러리가 전부 설치됩니다.
+</br>
+파이토치 설치 명령어 </br>
+```pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124```
