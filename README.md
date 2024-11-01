@@ -14,5 +14,7 @@
 </br></br>
 
 ## 필요 라이브러리 명령어 </br>
+```pip install "fastapi[standard]" ```</br>
 ```pip install librosa scipy websocket-client fastapi uvicorn torch transformers opencv-python Pillow numpy ``` </br>
 이 명령어면 모든 모델의 필수 라이브러리가 전부 설치됩니다.
+</br>
