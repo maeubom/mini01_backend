@@ -1,36 +1,18 @@
-from fastapi import FastAPI, Form, APIRouter, HTTPException
+from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import Response
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import scipy.io.wavfile
 import torch
 import io
-from pymongo import MongoClient
-from pymongo.server_api import ServerApi
-from gridfs import GridFS
-from datetime import datetime
-import os
-from dotenv import load_dotenv
-from typing import Optional, Dict, Union
 
-# .env 파일 로드
-load_dotenv()
-
-# MongoDB 연결 설정
-uri = os.getenv("MONGO_URI")
-client = MongoClient(uri, server_api=ServerApi('1'))
-db = client["maeubom"]
-fs = GridFS(db)
-generated_music_col = db["GeneratedMusic"]
-
-# FastAPI 인스턴스 및 라우터 설정
-app = FastAPI()
+# FastAPI 인스턴스 설정
 router = APIRouter()
 
 # MusicGen 모델 설정
 processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
 model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small", torch_dtype=torch.float32).to("cuda")
 
-def generate_music_binary(text: str, length: int = 512) -> Dict[str, Union[bytes, int]]:
+def generate_music_binary(text: str, length: int = 512):
     """
     텍스트를 바탕으로 음악을 생성하고 바이너리 데이터로 반환
     """
@@ -58,53 +40,17 @@ def generate_music_binary(text: str, length: int = 512) -> Dict[str, Union[bytes
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"음악 생성 실패: {str(e)}")
 
-
-# POST 메서드: 음악 생성 및 GridFS에 저장
-@app.post("/create_music/binary/")
+# POST 메서드: 음악 생성 및 바이너리로 반환
+@router.post("/v1/api/text-to-music")
 async def create_music_binary_endpoint(summary_text: str = Form(...), length: int = Form(512)):
     # 음악 생성
     result = generate_music_binary(summary_text, length)
     
-    # GridFS에 음악 바이너리 데이터 저장
-    file_id = fs.put(result["audio_binary"], filename="generated_music.wav")
-    
-    # MongoDB에 메타데이터 저장 (file_id 포함)
-    music_data = {
-        "file_name": "generated_music.wav",
-        "file_id": file_id,
-        "summary_text": summary_text,
-        "length": length,
-        "sampling_rate": result["sampling_rate"],
-        "created_at": datetime.utcnow()
-    }
-    generated_music_col.insert_one(music_data)
-    
-    # 생성된 파일 정보 반환
-    return {"file_name": "generated_music.wav", "file_id": str(file_id)}
-
-
-# GET 메서드: GridFS에서 특정 노래 파일을 바이너리로 반환
-@app.get("/create_music/binary")
-async def get_create_music(file_id: str):
-    # MongoDB에서 파일 정보 검색
-    music_data = generated_music_col.find_one({"file_id": file_id})
-    
-    if not music_data:
-        raise HTTPException(status_code=404, detail="Music file not found in database")
-    
-    # GridFS에서 파일 데이터를 읽어 반환
-    try:
-        audio_data = fs.get(file_id).read()
-    except Exception:
-        raise HTTPException(status_code=404, detail="Music file not found in GridFS")
-    
+    # 생성된 음악 바이너리 데이터 반환
     return Response(
-        content=audio_data,
+        content=result["audio_binary"],
         media_type="audio/wav",
         headers={
-            "Content-Disposition": f"attachment; filename={music_data['file_name']}"
+            "Content-Disposition": "attachment; filename=generated_music.wav"
         }
     )
-
-# 라우터 추가
-app.include_router(router)

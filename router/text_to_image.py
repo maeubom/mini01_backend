@@ -63,7 +63,7 @@ def get_images(prompt):
 # 웹소켓 세팅, 라우터 설정
 
 
-@router.post("/text-to-image")
+@router.post("/v1/api/text-to-image")
 async def process_request(query: str = Form(...)):
     try:
         if not ws.connected:
