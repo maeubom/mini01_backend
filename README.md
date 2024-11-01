@@ -19,4 +19,4 @@
 이 명령어면 모든 모델의 필수 라이브러리가 전부 설치됩니다.
 </br>
 파이토치 설치 명령어 </br>
-```pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124``
+```pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124```
