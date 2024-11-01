@@ -10,7 +10,7 @@ router = APIRouter()
 model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-large-v3-turbo")
 processor = WhisperProcessor.from_pretrained("openai/whisper-large-v3-turbo")
 
-@router.post("/transcribe")
+@router.post("/v1/api/audio-to-text")
 async def transcribe(audio: UploadFile = File(...)):
     # 업로드된 오디오 파일을 읽음
     audio_bytes = await audio.read()
