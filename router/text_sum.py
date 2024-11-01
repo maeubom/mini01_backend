@@ -1,11 +1,12 @@
 from transformers import pipeline
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, APIRouter
 
 # 요약 파이프라인 설정
 summarize_model = pipeline("summarization", model="lcw99/t5-base-korean-text-summary", device=0)
 
 # FastAPI 인스턴스 설정
 app = FastAPI()
+router = APIRouter()
 
 # 요약 함수 정의
 def text_sum(text: str) -> str:
