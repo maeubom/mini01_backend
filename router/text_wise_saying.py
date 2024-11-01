@@ -1,7 +1,22 @@
 from transformers import pipeline, OPTForCausalLM, GPT2Tokenizer
-from fastapi import FastAPI, Form, APIRouter
+from fastapi import FastAPI, Form, APIRouter, HTTPException
+from pymongo import MongoClient
+from pymongo.server_api import ServerApi
+from datetime import datetime
 import torch
 import random
+import os
+from dotenv import load_dotenv
+from bson import ObjectId
+
+# .env 파일 로드
+load_dotenv()
+
+# MongoDB 연결 설정
+uri = os.getenv("MONGO_URI")
+client = MongoClient(uri, server_api=ServerApi('1'))
+db = client["maeubom"]
+quote_col = db["Quote"]
 
 # 모델과 토크나이저 설정
 model = OPTForCausalLM.from_pretrained("facebook/opt-350m", torch_dtype=torch.float16)
@@ -11,9 +26,8 @@ tokenizer = GPT2Tokenizer.from_pretrained("facebook/opt-350m")
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
-
 # 명언 파일에서 명언을 읽어 리스트에 저장
-def load_quotes(file_path="../wise_saying.txt"):
+def load_quotes(file_path="wise_saying.txt"):
     with open(file_path, "r", encoding="utf-8") as file:
         return [line.strip() for line in file.readlines() if line.strip()]
 
@@ -29,9 +43,38 @@ async def create_text(input_text: str = Form(...)):
     # 명언 리스트에서 무작위로 하나 선택
     selected_quote = random.choice(quotes)
     selected_quote = selected_quote.split('.', 1)[-1].strip()
-    return selected_quote
 
+    # MongoDB에 명언 저장
+    quote_data = {
+        "quote": selected_quote,
+        "input_text": input_text,
+        "created_at": datetime.now()
+    }
+    result = quote_col.insert_one(quote_data)
+    
+    # MongoDB에서 생성된 ObjectId를 문자열로 변환하여 반환
+    quote_id = str(result.inserted_id)
+    
+    return {"quote_id": quote_id, "quote": selected_quote, "message": "Quote saved to database"}
 
-# 라우터 추가
-app.include_router(router)
+# 명언 가져오기
+@app.get("/get_text/")
+async def get_text(quote_id: str):
+    # 주어진 quote_id로 명언을 검색
+    try:
+        # ObjectId로 변환
+        object_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote_id format")
+    
+    # MongoDB에서 quote_id로 명언 가져오기
+    random_quote = quote_col.find_one({"_id": object_id})
+    
+    if random_quote is None:
+        raise HTTPException(status_code=404, detail="Quote not found")
 
+    return {
+        "quote_id": quote_id,
+        "quote": random_quote.get("quote"),
+        "input_text": random_quote.get("input_text")
+    }
