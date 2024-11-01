@@ -10,7 +10,7 @@ from PIL import Image
 import numpy as np
 import os
 from collections import Counter
-# from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
