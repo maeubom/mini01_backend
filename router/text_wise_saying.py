@@ -1,5 +1,5 @@
 from transformers import pipeline, OPTForCausalLM, GPT2Tokenizer
-from fastapi import FastAPI, Form, APIRouter
+from fastapi import FastAPI, Form, APIRouter, HTTPException
 from pymongo import MongoClient
 from pymongo.server_api import ServerApi
 from datetime import datetime
@@ -7,6 +7,7 @@ import torch
 import random
 import os
 from dotenv import load_dotenv
+from bson import ObjectId
 
 # .env 파일 로드
 load_dotenv()
@@ -26,7 +27,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model.to(device)
 
 # 명언 파일에서 명언을 읽어 리스트에 저장
-def load_quotes(file_path="../wise_saying.txt"):
+def load_quotes(file_path="wise_saying.txt"):
     with open(file_path, "r", encoding="utf-8") as file:
         return [line.strip() for line in file.readlines() if line.strip()]
 
@@ -47,28 +48,33 @@ async def create_text(input_text: str = Form(...)):
     quote_data = {
         "quote": selected_quote,
         "input_text": input_text,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now()
     }
-    quote_col.insert_one(quote_data)
+    result = quote_col.insert_one(quote_data)
     
-    return {"quote": selected_quote, "message": "Quote saved to database"}
+    # MongoDB에서 생성된 ObjectId를 문자열로 변환하여 반환
+    quote_id = str(result.inserted_id)
+    
+    return {"quote_id": quote_id, "quote": selected_quote, "message": "Quote saved to database"}
 
 # 명언 가져오기
-@app.get("/create_text/")
-async def get_create_text():
-    # MongoDB에서 저장된 명언 중 무작위로 하나 가져오기
-    count = quote_col.count_documents({})
-    if count == 0:
-        return {"message": "No quotes found in the database"}
-
-    random_index = random.randint(0, count - 1)
-    random_quote = quote_col.find().skip(random_index).limit(1)[0]
+@app.get("/get_text/")
+async def get_text(quote_id: str):
+    # 주어진 quote_id로 명언을 검색
+    try:
+        # ObjectId로 변환
+        object_id = ObjectId(quote_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid quote_id format")
+    
+    # MongoDB에서 quote_id로 명언 가져오기
+    random_quote = quote_col.find_one({"_id": object_id})
+    
+    if random_quote is None:
+        raise HTTPException(status_code=404, detail="Quote not found")
 
     return {
-        "quote": random_quote["quote"],
-        "input_text": random_quote["input_text"],
-        "created_at": random_quote["created_at"]
+        "quote_id": quote_id,
+        "quote": random_quote.get("quote"),
+        "input_text": random_quote.get("input_text")
     }
-
-# 라우터 추가
-app.include_router(router)
