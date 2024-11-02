@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, APIRouter
 from fastapi.responses import Response
 from transformers import AutoProcessor, MusicgenForConditionalGeneration
 import scipy.io.wavfile
@@ -6,6 +6,8 @@ import torch
 import io
 
 # FastAPI 인스턴스 설정
+
+app = FastAPI()
 router = APIRouter()
 
 # MusicGen 모델 설정

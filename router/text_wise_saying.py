@@ -1,5 +1,5 @@
 from transformers import pipeline, OPTForCausalLM, GPT2Tokenizer
-from fastapi import APIRouter, Form
+from fastapi import FastAPI, Form, APIRouter
 from datetime import datetime
 import torch
 import random
@@ -21,6 +21,8 @@ def load_quotes(file_path="wise_saying.txt"):
 quotes = load_quotes()  # wise_saying.txt에서 명언 불러오기
 
 # FastAPI 인스턴스 설정
+
+app = FastAPI()
 router = APIRouter()
 
 # FastAPI 엔드포인트: 입력한 텍스트를 기반으로 명언 생성
