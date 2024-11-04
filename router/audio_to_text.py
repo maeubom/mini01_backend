@@ -26,7 +26,7 @@ async def transcribe(audio: UploadFile = File(...)):
     audio_data, rate = librosa.load(wav_buffer, sr=16000)
 
     # 전처리 및 입력 데이터 변환
-    inputs = processor(audio_data, sampling_rate=rate, return_tensors="pt")
+    inputs = processor(audio_data, sampling_rate=rate, return_tensors="pt", language="ko")
 
     # 추론 및 텍스트 생성
     predicted_ids = model.generate(inputs["input_features"])
